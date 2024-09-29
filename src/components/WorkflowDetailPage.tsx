@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Clock, CheckCircle2, Music, Pause, Square } from "lucide-react";
+import { Send, Clock, CheckCircle2, Music, Pause, Square, File, FileText, PresentationIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JukeboxHeader from "./JukeboxHeader";
-
+import { Textarea } from "@/components/ui/textarea";
 
 
 const AI_CHAT_MESSAGES = [
@@ -28,6 +29,12 @@ const EXECUTION_PLAN = [
   { step: 3, description: 'Generate initial playlist recommendations', status: 'in-progress' },
   { step: 4, description: 'Apply user feedback to refine recommendations', status: 'pending' },
   { step: 5, description: 'Finalize and present playlist', status: 'pending' },
+];
+
+const ARTIFACTS = [
+    { type: 'document', name: 'Review Document', icon: File },
+    { type: 'summary', name: 'Executive Summary', icon: FileText },
+    { type: 'presentation', name: 'Project Presentation', icon: PresentationIcon },
 ];
 
 const ChatMessage = ({ role, content }) => (
@@ -66,6 +73,16 @@ const ExecutionStep = ({ step, description, status }) => (
   </div>
 );
 
+const ArtifactItem = ({ type, name, icon: Icon }) => (
+    <div className="flex items-center mb-4 p-2 bg-gray-700 rounded-lg">
+      <Icon className="w-6 h-6 mr-3 text-gray-400" />
+      <div>
+        <p className="font-semibold text-gray-200">{name}</p>
+        <p className="text-sm text-gray-400">{type}</p>
+      </div>
+    </div>
+  );
+
 const WorkflowDetailPage = () => {
   const [chatMessages, setChatMessages] = useState(AI_CHAT_MESSAGES);
   const [inputMessage, setInputMessage] = useState('');
@@ -98,14 +115,14 @@ const WorkflowDetailPage = () => {
       <JukeboxHeader />
       <div className="container mx-auto px-4 py-6">
         <div className="flex space-x-6 h-[calc(100vh-200px)]">
-          <Card className="w-1/4 bg-gray-800 border-gray-700">
+        <Card className="w-1/4 bg-gray-800 border-gray-700 flex flex-col">
             <CardHeader>
               <CardTitle className="flex justify-between items-center text-gray-100">
                 <span className='font-thin font-extralight text-gray-400'>CONVERSATION</span>
                 <div className="space-x-2">
                   <Button 
                     size="sm" 
-                    onClick={handlePauseWorkflow}
+                    onClick={() => {/* handle pause */}}
                     disabled={!isWorkflowRunning}
                     className="bg-red-500 text-white-400 hover:bg-red-600"
                   >
@@ -113,7 +130,7 @@ const WorkflowDetailPage = () => {
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={handleStopWorkflow}
+                    onClick={() => {/* handle stop */}}
                     disabled={!isWorkflowRunning}
                     className="bg-red-500 text-white-400 hover:bg-red-600"
                   >
@@ -122,37 +139,56 @@ const WorkflowDetailPage = () => {
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col h-full">
-              <ScrollArea className="flex-grow mb-4">
+            <CardContent className="flex-grow overflow-hidden">
+              <ScrollArea className="h-full pr-4">
                 {chatMessages.map((msg, index) => (
                   <ChatMessage key={index} role={msg.role} content={msg.content} />
                 ))}
               </ScrollArea>
-              <div className="flex space-x-2">
-                <Input
+            </CardContent>
+            <CardFooter className="mt-auto">
+              <div className="flex flex-col space-y-2 w-full">
+                <Textarea
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   placeholder="Type a message..."
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="bg-gray-700 text-gray-200 border-gray-600 focus:border-red-400"
+                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                  className="bg-gray-700 text-gray-200 border-gray-600 focus:border-red-400 resize-none"
+                  rows={3}
                 />
-                <Button onClick={handleSendMessage} className="bg-red-500 hover:bg-red-600">
-                  <Send className="w-4 h-4" />
+                <Button onClick={handleSendMessage} className="bg-red-500 hover:bg-red-600 w-full">
+                  <Send className="w-4 h-4 mr-2" />
+                  SEND
                 </Button>
               </div>
-            </CardContent>
+            </CardFooter>
           </Card>
           
           <Card className="w-1/2 bg-gray-800 border-gray-700">
             <CardHeader>
-              <CardTitle className="font-thin font-extralight text-gray-400">TIMELINE</CardTitle>
+              <CardTitle className="font-thin font-extralight text-gray-400">WORKFLOW DETAILS</CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-full">
-                {TIMELINE_EVENTS.map((event, index) => (
-                  <TimelineEvent key={index} time={event.time} event={event.event} />
-                ))}
-              </ScrollArea>
+              <Tabs defaultValue="timeline" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="timeline">TIMELINE</TabsTrigger>
+                  <TabsTrigger value="artifacts">ARTIFACTS</TabsTrigger>
+                </TabsList>
+                <TabsContent value="timeline">
+                  <ScrollArea className="h-[calc(100vh-350px)]">
+                    {TIMELINE_EVENTS.map((event, index) => (
+                      <TimelineEvent key={index} time={event.time} event={event.event} />
+                    ))}
+                  </ScrollArea>
+                </TabsContent>
+                <TabsContent value="artifacts">
+                  <ScrollArea className="h-[calc(100vh-350px)]">
+                    {ARTIFACTS.map((artifact, index) => (
+                      <ArtifactItem key={index} type={artifact.type} name={artifact.name} icon={artifact.icon} />
+                    ))}
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
           
